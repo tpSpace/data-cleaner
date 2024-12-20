@@ -4,6 +4,8 @@ This project is a simple data merger that merges hotel data from 3 different sou
 
 ## Installation
 
+Make sure you have bun installed cause this code was tested on bun. You can also use npm or yarn but runner won't work and you need to setup typescript and ts-node manually.
+
 ```bash
 bun install
 ```
@@ -12,6 +14,12 @@ bun install
 
 ```bash
 bun run index.ts iJhz,iKwL 5432,6789
+```
+
+Or use runner
+
+```bash
+./runner.sh iJhz,iKwL 5432,6789
 ```
 
 ## Result
