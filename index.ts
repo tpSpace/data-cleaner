@@ -9,5 +9,5 @@ import { HotelDataProcessor } from "./core/HotelDataProcessor";
   const processord = new HotelDataProcessor();
   const result = await processord.process(hotelIds, destinationIds);
 
-  console.log(JSON.stringify(result, null, 2));
+  HotelDataProcessor.printColoredJSON(result);
 })();

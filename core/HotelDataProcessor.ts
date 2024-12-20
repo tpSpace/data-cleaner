@@ -10,9 +10,6 @@ export class HotelDataProcessor {
     const data = await fetcher.fetchData(); // assuming this fetches data from different suppliers
     const mergedData = this.mergeData(data);
 
-    this.printColoredJSON(mergedData);
-    // remove redundant data
-
     return this.filterData(mergedData, hotelIds, destinationIds);
   }
 
@@ -206,7 +203,11 @@ export class HotelDataProcessor {
     });
   }
 
-  private printColoredJSON(data: Hotel[]): void {
+  /*
+   * Helper method to print a JSON object with colored keys and values.
+   * @param data The data to print is Hotel array
+   */
+  static printColoredJSON(data: Hotel[]): void {
     const jsonString = JSON.stringify(data, null, 2);
     const coloredJsonString = jsonString
       .replace(/"([^"]+)":/g, (match, p1) => `\x1b[32m"${p1}":\x1b[0m`)
