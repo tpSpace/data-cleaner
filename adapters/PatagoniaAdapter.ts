@@ -43,8 +43,8 @@ export class PatagoniaAdapter extends SupplierAdapter {
             },
             description: entry.info,
             amenities: {
-              general: entry.amenities || [],
-              room: [], // No room amenities provided
+              general: [], // General amenities not provided
+              room: entry.amenities || [],
             },
             images: {
               rooms: entry.images.rooms.map((img) => ({

@@ -75,18 +75,19 @@ export class HotelDataProcessor {
     }
 
     if (newHotel.amenities) {
-      existingHotel.amenities = {
-        general: this.removeDuplicatesAcrossCategories(
-          existingHotel.amenities?.general,
-          newHotel.amenities?.general,
-          existingHotel.amenities?.room,
-          newHotel.amenities?.room
-        ),
-        room: this.mergeUniqueWithHashmap(
-          existingHotel.amenities?.room,
-          newHotel.amenities?.room
-        ),
-      };
+      const processedAmenities = this.processAmenities(
+        [
+          ...(existingHotel.amenities?.general || []),
+          ...(newHotel.amenities?.general || []),
+        ],
+        [
+          ...(existingHotel.amenities?.room || []),
+          ...(newHotel.amenities?.room || []),
+        ]
+      );
+
+      existingHotel.amenities.general = processedAmenities.general;
+      existingHotel.amenities.room = processedAmenities.room;
     }
 
     // Handle booking conditions and ensure uniqueness using hashmap
@@ -144,31 +145,51 @@ export class HotelDataProcessor {
   }
 
   /**
-   * Helper method to remove duplicates across general and room categories.
-   * Items in `general` that also exist in `room` are removed from `general`.
-   * Both arrays are compared case-insensitively.
-   * @param existingGeneral Existing general amenities
-   * @param newGeneral New general amenities
-   * @param existingRoom Existing room amenities
-   * @param newRoom New room amenities
-   * @returns A deduplicated array for the general field
+   * Helper method to normalize a string: lowercase and remove spaces.
+   * @param str The string to normalize
+   * @returns The normalized string
    */
-  private removeDuplicatesAcrossCategories(
-    existingGeneral: string[] = [],
-    newGeneral: string[] = [],
-    existingRoom: string[] = [],
-    newRoom: string[] = []
-  ): string[] {
-    const generalItems = this.mergeUniqueWithHashmap(
-      existingGeneral,
-      newGeneral
-    ).map((item) => item.toLowerCase());
-    const roomItems = this.mergeUniqueWithHashmap(existingRoom, newRoom).map(
-      (item) => item.toLowerCase()
+  private normalizeString(str: string): string {
+    return str.replace(/\s+/g, "").toLowerCase();
+  }
+
+  /**
+   * Helper method to remove duplicates within an array.
+   * Normalizes strings to ensure case-insensitive comparison and removes spaces.
+   * @param items The array of items to process
+   * @returns A deduplicated array of items
+   */
+  private deduplicateArray(items: string[] = []): string[] {
+    const uniqueSet = new Set(items.map((item) => this.normalizeString(item)));
+    return Array.from(uniqueSet);
+  }
+
+  /**
+   * Deduplicate and compare amenities fields: `general` and `room`.
+   * @param general The general amenities array
+   * @param room The room amenities array
+   * @returns An object with deduplicated `general` and `room` arrays
+   */
+  private processAmenities(
+    general: string[] = [],
+    room: string[] = []
+  ): { general: string[]; room: string[] } {
+    // Deduplicate each field
+    const normalizedGeneral = this.deduplicateArray(general);
+    const normalizedRoom = this.deduplicateArray(room);
+
+    // Convert room to a Set for fast lookups
+    const roomSet = new Set(normalizedRoom);
+
+    // Remove items from general that exist in room
+    const deduplicatedGeneral = normalizedGeneral.filter(
+      (item) => !roomSet.has(item)
     );
 
-    const roomSet = new Set(roomItems); // Convert room items to a Set for fast lookups
-    return generalItems.filter((item) => !roomSet.has(item)); // Exclude items in room from general
+    return {
+      general: deduplicatedGeneral,
+      room: normalizedRoom,
+    };
   }
 
   private filterData(
