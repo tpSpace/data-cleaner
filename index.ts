@@ -8,6 +8,6 @@ import { HotelDataProcessor } from "./core/HotelDataProcessor";
 
   const processord = new HotelDataProcessor();
   const result = await processord.process(hotelIds, destinationIds);
-  // console.log(result[0]);
-  // console.log(JSON.stringify(result, null, 2));
+
+  console.log(JSON.stringify(result, null, 2));
 })();

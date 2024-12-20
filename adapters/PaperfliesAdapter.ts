@@ -42,9 +42,9 @@ export class PaperfliesAdapter extends SupplierAdapter {
           );
 
           return {
-            id: this.safeGet<string>(entry, "hotelId", ""),
-            destination_id: this.safeGet<string>(entry, "destinationId", ""),
-            name: this.safeGet<string>(entry, "hotelName", ""),
+            id: this.safeGet<string>(entry, "hotel_id", ""),
+            destination_id: this.safeGet<string>(entry, "destination_id", ""),
+            name: this.safeGet<string>(entry, "hotel_name", ""),
             location: {
               lat: this.safeGet<number>(geo, "lat", 0),
               lng: this.safeGet<number>(geo, "lng", 0),
@@ -52,15 +52,21 @@ export class PaperfliesAdapter extends SupplierAdapter {
               city: this.safeGet<string>(location, "city", ""),
               country: this.safeGet<string>(location, "country", ""),
             },
-            description: this.safeGet<string>(entry, "description", ""),
+            description: this.safeGet<string>(entry, "details", ""),
             amenities: {
-              general: this.safeGet<string[]>(amenities, "general", []),
-              room: this.safeGet<string[]>(amenities, "room", []),
+              general: this.safeGet<string[]>(entry, "amenities.general", []),
+              room: this.safeGet<string[]>(entry, "amenities.room", []),
             },
             images: {
-              rooms: this.safeGet<Image[]>(entry, "rooms", []),
-              site: this.safeGet<Image[]>(entry, "site", []),
-              amenities: this.safeGet<Image[]>(entry, "amenities", []),
+              rooms: entry.images.rooms.map((img) => ({
+                link: img.link,
+                description: img.caption,
+              })),
+              site: entry.images.site.map((img) => ({
+                link: img.link,
+                description: img.caption,
+              })),
+              amenities: [],
             },
             booking_conditions: this.safeGet<string[]>(
               entry,

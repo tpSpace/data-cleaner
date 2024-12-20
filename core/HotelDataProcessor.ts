@@ -13,7 +13,7 @@ export class HotelDataProcessor {
   ): Promise<Hotel[]> {
     const fetcher = new HotelDataFetcher();
     const data = await fetcher.fetchData();
-    console.log(JSON.stringify(data, null, 2));
+    this.printColoredJSON(data);
     const mergedData = this.mergeData(data);
 
     return this.filterData(mergedData, hotelIds, destinationIds);
@@ -23,19 +23,24 @@ export class HotelDataProcessor {
     const mergedMap: { [key: string]: MergedHotel } = {};
     for (const hotel of hotels) {
       if (!mergedMap[hotel.id]) {
-        mergedMap[hotel.id] = hotel;
+        mergedMap[hotel.id] = { ...hotel };
       } else {
         const existing = mergedMap[hotel.id];
         Object.keys(hotel).forEach((key) => {
           const field = key as keyof Hotel;
-          if (hotel[field]) {
-            if (typeof hotel[field] === "object") {
-              mergedMap[hotel.id][field] = {
+          const newValue = hotel[field];
+          if (newValue) {
+            if (typeof newValue === "object" && !Array.isArray(newValue)) {
+              existing[field] = {
                 ...existing[field],
-                ...hotel[field],
+                ...newValue,
               };
+            } else if (Array.isArray(newValue)) {
+              existing[field] = Array.from(
+                new Set([...existing[field], ...newValue])
+              );
             } else {
-              mergedMap[hotel.id][field] = hotel[field];
+              existing[field] = newValue;
             }
           }
         });
@@ -56,5 +61,15 @@ export class HotelDataProcessor {
         destinationIds.includes(hotel.destination_id.toString());
       return matchesHotelId && matchesDestinationId;
     });
+  }
+
+  private printColoredJSON(data: Hotel[]): void {
+    const jsonString = JSON.stringify(data, null, 2);
+    const coloredJsonString = jsonString
+      .replace(/"([^"]+)":/g, (match, p1) => `\x1b[32m"${p1}":\x1b[0m`)
+      .replace(/: "([^"]+)"/g, (match, p1) => `: \x1b[33m"${p1}"\x1b[0m`)
+      .replace(/: (\d+)/g, (match, p1) => `: \x1b[34m${p1}\x1b[0m`);
+
+    console.log(coloredJsonString);
   }
 }

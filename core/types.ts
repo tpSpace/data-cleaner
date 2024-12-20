@@ -74,8 +74,13 @@ export interface PaperfliesSupplier {
     room: string[];
   };
   images: {
-    rooms: patagoniaImage[];
-    site: patagoniaImage[];
+    rooms: paperfliesImage[];
+    site: paperfliesImage[];
   };
   booking_conditions: string[];
+}
+
+export interface paperfliesImage {
+  link: string;
+  caption: string;
 }
