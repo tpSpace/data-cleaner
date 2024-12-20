@@ -1,52 +1,99 @@
 import { Hotel } from "./types";
 import { HotelDataFetcher } from "./HotelDataFetcher";
 
-interface MergedHotel {
-  id: string;
-  [key: string]: any;
-}
-
 export class HotelDataProcessor {
   async process(
     hotelIds: string[],
     destinationIds: string[]
   ): Promise<Hotel[]> {
     const fetcher = new HotelDataFetcher();
-    const data = await fetcher.fetchData();
-    this.printColoredJSON(data);
+    const data = await fetcher.fetchData(); // assuming this fetches data from different suppliers
     const mergedData = this.mergeData(data);
+
+    this.printColoredJSON(mergedData);
 
     return this.filterData(mergedData, hotelIds, destinationIds);
   }
 
   private mergeData(hotels: Hotel[]): Hotel[] {
-    const mergedMap: { [key: string]: MergedHotel } = {};
+    const mergedData: Hotel[] = [];
+
+    // Iterate over the hotels (from various suppliers)
     for (const hotel of hotels) {
-      if (!mergedMap[hotel.id]) {
-        mergedMap[hotel.id] = { ...hotel };
+      const existingHotel = mergedData.find((h) => h.id === hotel.id);
+
+      if (existingHotel) {
+        // Merge missing fields from the new hotel data into the existing one
+        this.mergeHotelFields(existingHotel, hotel);
       } else {
-        const existing = mergedMap[hotel.id];
-        Object.keys(hotel).forEach((key) => {
-          const field = key as keyof Hotel;
-          const newValue = hotel[field];
-          if (newValue) {
-            if (typeof newValue === "object" && !Array.isArray(newValue)) {
-              existing[field] = {
-                ...existing[field],
-                ...newValue,
-              };
-            } else if (Array.isArray(newValue)) {
-              existing[field] = Array.from(
-                new Set([...existing[field], ...newValue])
-              );
-            } else {
-              existing[field] = newValue;
-            }
-          }
-        });
+        // If it's a new hotel, simply add it
+        mergedData.push({ ...hotel });
       }
     }
-    return Object.values(mergedMap) as Hotel[];
+
+    return mergedData;
+  }
+
+  private mergeHotelFields(existingHotel: Hotel, newHotel: Hotel): void {
+    // Merge the general fields
+    Object.keys(newHotel).forEach((key) => {
+      if (newHotel[key] !== undefined && existingHotel[key] === undefined) {
+        existingHotel[key] = newHotel[key];
+      }
+    });
+
+    // Specifically handle complex objects like 'location' and 'images'
+    // with location check if it exists and merge the fields
+    if (newHotel.location) {
+      const mergedLocation = {
+        lat: newHotel.location.lat || existingHotel.location.lat,
+        lng: newHotel.location.lng || existingHotel.location.lng,
+        address: newHotel.location.address || existingHotel.location.address,
+        city: newHotel.location.city || existingHotel.location.city,
+        country: newHotel.location.country || existingHotel.location.country,
+      };
+      existingHotel.location = mergedLocation;
+    }
+
+    if (newHotel.images) {
+      existingHotel.images = {
+        rooms: Array.from(
+          new Set([...existingHotel.images.rooms, ...newHotel.images.rooms])
+        ),
+        site: Array.from(
+          new Set([...existingHotel.images.site, ...newHotel.images.site])
+        ),
+        amenities: Array.from(
+          new Set([
+            ...existingHotel.images.amenities,
+            ...newHotel.images.amenities,
+          ])
+        ),
+      };
+    }
+
+    if (newHotel.amenities) {
+      existingHotel.amenities = {
+        general: Array.from(
+          new Set([
+            ...existingHotel.amenities.general,
+            ...newHotel.amenities.general,
+          ])
+        ),
+        room: Array.from(
+          new Set([...existingHotel.amenities.room, ...newHotel.amenities.room])
+        ),
+      };
+    }
+
+    if (newHotel.booking_conditions) {
+      existingHotel.booking_conditions = Array.from(
+        new Set([
+          ...existingHotel.booking_conditions,
+          ...newHotel.booking_conditions,
+        ])
+      );
+    }
   }
 
   private filterData(
