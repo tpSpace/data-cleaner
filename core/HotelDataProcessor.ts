@@ -13,7 +13,7 @@ export class HotelDataProcessor {
   ): Promise<Hotel[]> {
     const fetcher = new HotelDataFetcher();
     const data = await fetcher.fetchData();
-    // console.log(data);
+    console.log(JSON.stringify(data, null, 2));
     const mergedData = this.mergeData(data);
 
     return this.filterData(mergedData, hotelIds, destinationIds);

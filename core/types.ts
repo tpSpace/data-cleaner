@@ -42,28 +42,22 @@ export interface AcmeSupplier {
 }
 
 export interface PatagoniaSupplier {
-  hotel_id: string;
-  destination_id: string;
-  hotel_name: string;
-  location: {
-    address: string;
-    country: string;
-  };
-  details: string;
-  amenities: {
-    general: string[];
-    room: string[];
-  };
+  id: string;
+  destination: string;
+  name: string;
+  lat: number;
+  lng: number;
+  info: string;
+  amenities: string[];
   images: {
     rooms: patagoniaImage[];
-    site: patagoniaImage[];
+    amenities: patagoniaImage[];
   };
-  booking_conditions: string[];
 }
 
 export interface patagoniaImage {
-  link: string;
-  caption: string;
+  url: string;
+  description: string;
 }
 
 export interface PaperfliesSupplier {

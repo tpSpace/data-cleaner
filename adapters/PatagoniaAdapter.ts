@@ -1,13 +1,26 @@
-import { Hotel, PatagoniaSupplier, Image } from "../core/types";
+import { Hotel, Image } from "../core/types";
 import { SupplierAdapter } from "./SupplierAdapter";
 
-export class PatagoniaAdapter extends SupplierAdapter {
-  private safeGet<T>(obj: any, key: string, defaultValue: T): T {
-    return obj && obj[key] !== undefined && obj[key] !== null
-      ? (obj[key] as T)
-      : defaultValue;
-  }
+export interface PatagoniaSupplier {
+  id: string;
+  destination: string;
+  name: string;
+  lat: number;
+  lng: number;
+  info: string;
+  amenities: string[];
+  images: {
+    rooms: patagoniaImage[];
+    amenities: patagoniaImage[];
+  };
+}
 
+export interface patagoniaImage {
+  url: string;
+  description: string;
+}
+
+export class PatagoniaAdapter extends SupplierAdapter {
   transform(data: PatagoniaSupplier[]): Hotel[] {
     if (!Array.isArray(data)) {
       console.warn("Invalid input: Expected array of PatagoniaSupplier");
@@ -17,50 +30,37 @@ export class PatagoniaAdapter extends SupplierAdapter {
     return data
       .map((entry): Hotel | null => {
         try {
-          const amenities = this.safeGet<Record<string, string[]>>(
-            entry,
-            "amenities",
-            {
-              general: [],
-              room: [],
-            }
-          );
-
-          const images = this.safeGet<{
-            rooms: Image[];
-            site: Image[];
-            amenities: Image[];
-          }>(entry, "images", {
-            rooms: [],
-            site: [],
-            amenities: [],
-          });
-
           return {
-            id: this.safeGet<string>(entry, "hotel_id", "patagonclear"),
-            destination_id: this.safeGet<string>(entry, "destination_id", ""),
-            name: this.safeGet<string>(entry, "hotel_name", ""),
+            id: entry.id,
+            destination_id: entry.destination,
+            name: entry.name,
             location: {
-              lat: this.safeGet<number>(entry, "latitude", 0),
-              lng: this.safeGet<number>(entry, "longitude", 0),
-              address: this.safeGet<string>(entry, "address", ""),
-              city: this.safeGet<string>(entry, "city", ""),
-              country: this.safeGet<string>(entry, "country", ""),
+              lat: entry.lat,
+              lng: entry.lng,
+              address: "", // Address not provided
+              city: "", // City not provided
+              country: "", // Country not provided
             },
-            description: this.safeGet<string>(entry, "details", ""),
+            description: entry.info,
             amenities: {
-              general: this.safeGet<string[]>(amenities, "general", []),
-              room: this.safeGet<string[]>(amenities, "room", []),
+              general: entry.amenities || [],
+              room: [], // No room amenities provided
             },
-            images: images,
-            booking_conditions: this.safeGet<string[]>(
-              entry,
-              "booking_conditions",
-              []
-            ),
+            images: {
+              rooms: entry.images.rooms.map((img) => ({
+                link: img.url,
+                description: img.description,
+              })),
+              site: [], // Site images not provided
+              amenities: entry.images.amenities.map((img) => ({
+                link: img.url,
+                description: img.description,
+              })),
+            },
+            booking_conditions: [], // Booking conditions not provided
           };
         } catch (error) {
-          console.error(`Error transforming hotel data: ${error}`);
+          console.error(`Error transforming entry: ${error}`);
           return null;
         }
       })
