@@ -54,8 +54,8 @@ export class PaperfliesAdapter extends SupplierAdapter {
             },
             description: this.safeGet<string>(entry, "details", ""),
             amenities: {
-              general: this.safeGet<string[]>(entry, "amenities.general", []),
-              room: this.safeGet<string[]>(entry, "amenities.room", []),
+              general: this.safeGet<string[]>(entry.amenities, "general", []),
+              room: this.safeGet<string[]>(entry.amenities, "room", []),
             },
             images: {
               rooms: entry.images.rooms.map((img) => ({

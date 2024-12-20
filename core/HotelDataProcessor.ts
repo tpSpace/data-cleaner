@@ -11,6 +11,7 @@ export class HotelDataProcessor {
     const mergedData = this.mergeData(data);
 
     this.printColoredJSON(mergedData);
+    // remove redundant data
 
     return this.filterData(mergedData, hotelIds, destinationIds);
   }
@@ -55,46 +56,119 @@ export class HotelDataProcessor {
       existingHotel.location = mergedLocation;
     }
 
+    // Handle images and ensure uniqueness using hashmap
     if (newHotel.images) {
       existingHotel.images = {
-        rooms: Array.from(
-          new Set([...existingHotel.images.rooms, ...newHotel.images.rooms])
+        rooms: this.mergeUniqueWithHashmap(
+          existingHotel.images?.rooms,
+          newHotel.images?.rooms
         ),
-        site: Array.from(
-          new Set([...existingHotel.images.site, ...newHotel.images.site])
+        site: this.mergeUniqueWithHashmap(
+          existingHotel.images?.site,
+          newHotel.images?.site
         ),
-        amenities: Array.from(
-          new Set([
-            ...existingHotel.images.amenities,
-            ...newHotel.images.amenities,
-          ])
+        amenities: this.mergeUniqueWithHashmap(
+          existingHotel.images?.amenities,
+          newHotel.images?.amenities
         ),
       };
     }
 
     if (newHotel.amenities) {
       existingHotel.amenities = {
-        general: Array.from(
-          new Set([
-            ...existingHotel.amenities.general,
-            ...newHotel.amenities.general,
-          ])
+        general: this.removeDuplicatesAcrossCategories(
+          existingHotel.amenities?.general,
+          newHotel.amenities?.general,
+          existingHotel.amenities?.room,
+          newHotel.amenities?.room
         ),
-        room: Array.from(
-          new Set([...existingHotel.amenities.room, ...newHotel.amenities.room])
+        room: this.mergeUniqueWithHashmap(
+          existingHotel.amenities?.room,
+          newHotel.amenities?.room
         ),
       };
     }
 
+    // Handle booking conditions and ensure uniqueness using hashmap
     if (newHotel.booking_conditions) {
-      existingHotel.booking_conditions = Array.from(
-        new Set([
-          ...(existingHotel.booking_conditions || []),
-          ...(newHotel.booking_conditions || []),
-        ])
+      existingHotel.booking_conditions = this.mergeUniqueWithHashmap(
+        existingHotel.booking_conditions,
+        newHotel.booking_conditions
       );
-      console.log(existingHotel.booking_conditions);
     }
+
+    if (newHotel.description) {
+      if (
+        !existingHotel.description ||
+        newHotel.description.length > existingHotel.description.length
+      ) {
+        existingHotel.description = newHotel.description;
+      }
+    }
+  }
+
+  /**
+   * Helper method to merge arrays and remove duplicates using hashmap.
+   * @param existingItems Existing array of items
+   * @param newItems New array of items to merge
+   * @returns A merged array with unique items
+   */
+  private mergeUniqueWithHashmap(
+    existingItems: any[] = [],
+    newItems: any[] = []
+  ): any[] {
+    const itemMap: { [key: string]: boolean } = {}; // Hashmap for tracking unique items
+    const result: any[] = [];
+
+    // Add existing items to the hashmap and result
+    for (const item of existingItems) {
+      const key =
+        typeof item === "object" ? JSON.stringify(item) : item.toString();
+      if (!itemMap[key]) {
+        itemMap[key] = true;
+        result.push(item);
+      }
+    }
+
+    // Add new items to the hashmap and result
+    for (const item of newItems) {
+      const key =
+        typeof item === "object" ? JSON.stringify(item) : item.toString();
+      if (!itemMap[key]) {
+        itemMap[key] = true;
+        result.push(item);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Helper method to remove duplicates across general and room categories.
+   * Items in `general` that also exist in `room` are removed from `general`.
+   * Both arrays are compared case-insensitively.
+   * @param existingGeneral Existing general amenities
+   * @param newGeneral New general amenities
+   * @param existingRoom Existing room amenities
+   * @param newRoom New room amenities
+   * @returns A deduplicated array for the general field
+   */
+  private removeDuplicatesAcrossCategories(
+    existingGeneral: string[] = [],
+    newGeneral: string[] = [],
+    existingRoom: string[] = [],
+    newRoom: string[] = []
+  ): string[] {
+    const generalItems = this.mergeUniqueWithHashmap(
+      existingGeneral,
+      newGeneral
+    ).map((item) => item.toLowerCase());
+    const roomItems = this.mergeUniqueWithHashmap(existingRoom, newRoom).map(
+      (item) => item.toLowerCase()
+    );
+
+    const roomSet = new Set(roomItems); // Convert room items to a Set for fast lookups
+    return generalItems.filter((item) => !roomSet.has(item)); // Exclude items in room from general
   }
 
   private filterData(
