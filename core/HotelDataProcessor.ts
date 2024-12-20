@@ -89,10 +89,11 @@ export class HotelDataProcessor {
     if (newHotel.booking_conditions) {
       existingHotel.booking_conditions = Array.from(
         new Set([
-          ...existingHotel.booking_conditions,
-          ...newHotel.booking_conditions,
+          ...(existingHotel.booking_conditions || []),
+          ...(newHotel.booking_conditions || []),
         ])
       );
+      console.log(existingHotel.booking_conditions);
     }
   }
 

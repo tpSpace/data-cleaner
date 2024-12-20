@@ -70,7 +70,7 @@ export class PaperfliesAdapter extends SupplierAdapter {
             },
             booking_conditions: this.safeGet<string[]>(
               entry,
-              "bookingInfo",
+              "booking_conditions",
               []
             ),
           };
